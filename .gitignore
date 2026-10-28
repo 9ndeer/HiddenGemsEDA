@@ -1,0 +1,6 @@
+# Bases de datos y archivos pesados
+dataset_transfermarkt/
+transfermarkt_archive.zip
+
+# Archivos temporales de Jupyter Notebook
+.ipynb_checkpoints/
