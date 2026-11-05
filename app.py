@@ -14,9 +14,6 @@ st.title("Hidden Gems: Scouting Interactivo y Análisis de Mercado")
 # ==============================================================================
 # DESCARGA AUTOMÁTICA DESDE GOOGLE DRIVE (Para Streamlit Cloud)
 # ==============================================================================
-# ==============================================================================
-# DESCARGA AUTOMÁTICA DESDE GOOGLE DRIVE (Para Streamlit Cloud)
-# ==============================================================================
 @st.cache_resource
 def descargar_datos_desde_drive():
     data_dir = "dataset_transfermarkt"
@@ -35,7 +32,6 @@ def descargar_datos_desde_drive():
     
     for nombre_archivo, url_drive in archivos.items():
         ruta_local = os.path.join(data_dir, nombre_archivo)
-        # Comprobamos únicamente si el archivo local NO existe todavía
         if not os.path.exists(ruta_local):
             try:
                 gdown.download(url_drive, ruta_local, quiet=True)
@@ -52,14 +48,14 @@ seccion_activa = st.sidebar.radio(
     [
         "Coeficiente de Eficiencia y Penalización", 
         "Análisis de Sobreprecio",
-        "Scouting y Producción Ofensiva"
+        "Scouting y Producción Ofensiva",
+        "🤖 AI Scout Pro: Comparativas y Clones"
     ]
 )
 
 st.sidebar.markdown("---")
-st.sidebar.header("Filtros Dinámicos")
 
-# Mapa global de colores unificado para el Apartado 1
+# Mapa global de colores unificado
 mapa_colores_cuartil = {
     '4 (Zona Alta)': '#27ae60',   # Verde (Élite/Alta)
     '3 (Media-Alta)': '#2980b9',  # Azul 
@@ -67,16 +63,42 @@ mapa_colores_cuartil = {
     '1 (Zona Baja)': '#c0392b'    # Rojo (Baja)
 }
 
+def clean_name(name):
+    if pd.isna(name): return ""
+    name_str = str(name).strip().lower()
+    name_str = ''.join(c for c in unicodedata.normalize('NFD', name_str) if unicodedata.category(c) != 'Mn')
+    name_str = re.sub(r'[^\w\s]', ' ', name_str)
+    return re.sub(r'\s+', ' ', name_str).strip()
+
+@st.cache_data
+def cargar_datos_completos():
+    df_full = pd.DataFrame()
+    df_val = pd.DataFrame()
+    df_players_map = pd.DataFrame()
+    
+    for path_prefix in ['.', 'dataset_transfermarkt']:
+        f_full = os.path.join(path_prefix, 'players_data-2025_2026.csv')
+        if os.path.exists(f_full) and df_full.empty:
+            df_full = pd.read_csv(f_full)
+            
+        f_val = os.path.join(path_prefix, 'player_valuations.csv')
+        if os.path.exists(f_val) and df_val.empty:
+            df_val = pd.read_csv(f_val)
+            
+        f_map = os.path.join(path_prefix, 'players.csv')
+        if os.path.exists(f_map) and df_players_map.empty:
+            df_players_map = pd.read_csv(f_map)
+
+    return df_full, df_val, df_players_map
+
+
 # ==============================================================================
 # SECCIÓN 1: COEFICIENTE DE EFICIENCIA PONDERADA Y PENALIZACIÓN
 # ==============================================================================
 if seccion_activa == "Coeficiente de Eficiencia y Penalización":
+    st.sidebar.header("Filtros Dinámicos")
     st.subheader("Análisis Defensivo, de Eficiencia y Disciplinario de Mediocentros y Defensas")
-    st.markdown("""
-    Este apartado evalúa el rendimiento defensivo, la disciplina, el riesgo de amonestaciones y la distribución de balón 
-    mediante enfoques cruzados e independientes. Se exige un mínimo de 1000 minutos jugados y permite filtrar por edad y valor de mercado. 
-    """)
-
+    
     ligas_fbref = {
         'Inglaterra (Premier League)': 'eng Premier League',
         'España (La Liga)': 'es La Liga', 
@@ -88,103 +110,30 @@ if seccion_activa == "Coeficiente de Eficiencia y Penalización":
     liga_fbref_nombre = st.sidebar.selectbox("Selecciona la Liga para el Análisis:", list(ligas_fbref.keys()), key="liga_fbref_select")
     liga_fbref_id = ligas_fbref[liga_fbref_nombre]
 
-    edad_maxima_def = st.sidebar.slider(
-        "Filtrar por Edad Máxima:", 
-        min_value=16, max_value=40, value=35, step=1,
-        key="slider_edad_def_mf",
-        help="Ajusta la edad máxima para el análisis."
-    )
-
-    valor_mercado_max = st.sidebar.slider(
-        "Valor de Mercado Máximo (Millones €):",
-        min_value=1.0, max_value=200.0, value=200.0, step=5.0,
-        key="slider_valor_mercado_max",
-        help="Filtra jugadores cuyo valor de mercado no supere esta cifra."
-    )
-
-    def clean_name(name):
-        if pd.isna(name): return ""
-        name_str = str(name).strip().lower()
-        name_str = ''.join(c for c in unicodedata.normalize('NFD', name_str) if unicodedata.category(c) != 'Mn')
-        name_str = re.sub(r'[^\w\s]', ' ', name_str)
-        return re.sub(r'\s+', ' ', name_str).strip()
-
-    # DICCIONARIO DE ALIAS EXACTOS
-    alias_map = {
-        'gabriel magalhaes': 'gabriel',
-        'max kilman': 'maximilian kilman',
-        'hwang hee chan': 'hee chan hwang',
-        'toti gomes': 'toti',
-        'idrissa gana gueye': 'idrissa gueye',
-        'nicolas gonzalez': 'nico gonzalez',
-        'emi buendia': 'emiliano buendia',
-        'hannibal mejbri': 'hannibal',
-        'yeremi pino': 'yeremy pino',
-        'valentino livramento': 'tino livramento',
-        'nico o reilly': 'nico o reilly',
-        'eli junior kroupi': 'junior kroupi',
-        'yehor yarmoliuk': 'yegor yarmolyuk',
-        'daniel ballard': 'dan ballard',
-        'florentino luis': 'florentino',
-        'ferdi kadioglu': 'ferdi kadioglu',
-        'lucas': 'lucas',
-        'adam smith': 'adam smith',
-        'castrin': 'castrin',
-        'roberto navarro': 'robert navarro',
-        'domingos andre ribeiro almeida': 'andre almeida',
-        'joaquin martinez gauna': 'quique salas',
-        'djene': 'dakonam djene',
-        'iglesias': 'juan iglesias',
-        'olasagasti': 'jon ander olasagasti',
-        'francisco perez': 'fran perez',
-        'catena': 'alejandro catena',
-        'isaac palazon camacho': 'isi palazon',
-        'jose luis garcia vaya': 'pepelu',
-        'urko gonzalez': 'urko gonzalez de zarate',
-        'brugui': 'roger brugue',
-        'copete': 'jose copete',
-        'rahim bonkano': 'abdel rahim alhassane',
-        'lucas ahijado': 'lucas ahijado',
-        'andre frank zambo anguissa': 'frank anguissa',
-        'oliver nielsen': 'oliver nielsen',
-        'albert gudmundsson': 'albert gudmundsson',
-        'rafel obrador': 'rafa obrador',
-        'leo skiri ostigard': 'leo ostigard',
-        'ze pedro figueiredo': 'ze pedro',
-        'michel ndary adopo': 'michel adopo',
-        'kialonda': 'kialonda gaspar',
-        'oliver jensen': 'oliver jensen',
-        'romano floriani': 'romano floriani mussolini',
-        'castrop jens': 'jens castrop',
-        'ifechukwu ogbus': 'ifechukwu ogbus',
-        'caio henrique oliveira silva': 'caio henrique',
-        'igor carioca': 'igor silva',
-        'dehmaime assoumani': 'dehmaine assoumani',
-        'abdulai juma bah': 'abdulai juma bah'
-    }
-
-    @st.cache_data
-    def cargar_datos_completos():
-        df_full = pd.DataFrame()
-        df_val = pd.DataFrame()
-        df_players_map = pd.DataFrame()
-        
-        for path_prefix in ['.', 'dataset_transfermarkt']:
-            f_full = os.path.join(path_prefix, 'players_data-2025_2026.csv')
-            if os.path.exists(f_full) and df_full.empty:
-                df_full = pd.read_csv(f_full)
-                
-            f_val = os.path.join(path_prefix, 'player_valuations.csv')
-            if os.path.exists(f_val) and df_val.empty:
-                df_val = pd.read_csv(f_val)
-                
-            f_map = os.path.join(path_prefix, 'players.csv')
-            if os.path.exists(f_map) and df_players_map.empty:
-                df_players_map = pd.read_csv(f_map)
-
-        return df_full, df_val, df_players_map
+    edad_maxima_def = st.sidebar.slider("Filtrar por Edad Máxima:", min_value=16, max_value=40, value=35, step=1, key="slider_edad_def_mf")
+    valor_mercado_max = st.sidebar.slider("Valor de Mercado Máximo (Millones €):", min_value=1.0, max_value=200.0, value=200.0, step=5.0, key="slider_valor_mercado_max")
 
     df_full_fbref, df_val, df_players_map = cargar_datos_completos()
+    
+    alias_map = {
+        'gabriel magalhaes': 'gabriel', 'max kilman': 'maximilian kilman', 'hwang hee chan': 'hee chan hwang',
+        'toti gomes': 'toti', 'idrissa gana gueye': 'idrissa gueye', 'nicolas gonzalez': 'nico gonzalez',
+        'emi buendia': 'emiliano buendia', 'hannibal mejbri': 'hannibal', 'yeremi pino': 'yeremy pino',
+        'valentino livramento': 'tino livramento', 'nico o reilly': 'nico o reilly', 'eli junior kroupi': 'junior kroupi',
+        'yehor yarmoliuk': 'yegor yarmolyuk', 'daniel ballard': 'dan ballard', 'florentino luis': 'florentino',
+        'ferdi kadioglu': 'ferdi kadioglu', 'lucas': 'lucas', 'adam smith': 'adam smith', 'castrin': 'castrin',
+        'roberto navarro': 'robert navarro', 'domingos andre ribeiro almeida': 'andre almeida',
+        'joaquin martinez gauna': 'quique salas', 'djene': 'dakonam djene', 'iglesias': 'juan iglesias',
+        'olasagasti': 'jon ander olasagasti', 'francisco perez': 'fran perez', 'catena': 'alejandro catena',
+        'isaac palazon camacho': 'isi palazon', 'jose luis garcia vaya': 'pepelu', 'urko gonzalez': 'urko gonzalez de zarate',
+        'brugui': 'roger brugue', 'copete': 'jose copete', 'rahim bonkano': 'abdel rahim alhassane',
+        'lucas ahijado': 'lucas ahijado', 'andre frank zambo anguissa': 'frank anguissa', 'oliver nielsen': 'oliver nielsen',
+        'albert gudmundsson': 'albert gudmundsson', 'rafel obrador': 'rafa obrador', 'leo skiri ostigard': 'leo ostigard',
+        'ze pedro figueiredo': 'ze pedro', 'michel ndary adopo': 'michel adopo', 'kialonda': 'kialonda gaspar',
+        'oliver jensen': 'oliver jensen', 'romano floriani': 'romano floriani mussolini', 'castrop jens': 'jens castrop',
+        'ifechukwu ogbus': 'ifechukwu ogbus', 'caio henrique oliveira silva': 'caio henrique', 'igor carioca': 'igor silva',
+        'dehmaime assoumani': 'dehmaine assoumani', 'abdulai juma bah': 'abdulai juma bah'
+    }
 
     if not df_full_fbref.empty:
         df_liga_fbref = df_full_fbref[df_full_fbref['Comp'] == liga_fbref_id].copy()
@@ -200,7 +149,6 @@ if seccion_activa == "Coeficiente de Eficiencia y Penalización":
             df_map_clean['Born_TM'] = pd.to_datetime(df_map_clean['date_of_birth'], errors='coerce').dt.year
             
             df_val_merged = pd.merge(df_val_latest, df_map_clean, on='player_id', how='inner')
-
             df_liga_fbref['Player_clean_FB'] = df_liga_fbref['Player'].apply(clean_name)
             df_liga_fbref['Player_clean_FB'] = df_liga_fbref['Player_clean_FB'].replace(alias_map)
 
@@ -247,11 +195,7 @@ if seccion_activa == "Coeficiente de Eficiencia y Penalización":
             df_def_mf['edad_final'] = pd.to_numeric(df_def_mf['Age'], errors='coerce').fillna(25)
             df_def_mf['valor_mercado_num'] = df_def_mf['Market_Value_M'].fillna(-1.0) if 'Market_Value_M' in df_def_mf.columns else -1.0
 
-            df_def_mf = df_def_mf[
-                (df_def_mf['Min'] >= 1000) & 
-                (df_def_mf['edad_final'] <= edad_maxima_def) & 
-                ((df_def_mf['valor_mercado_num'] == -1.0) | (df_def_mf['valor_mercado_num'] <= valor_mercado_max))
-            ].copy()
+            df_def_mf = df_def_mf[(df_def_mf['Min'] >= 1000) & (df_def_mf['edad_final'] <= edad_maxima_def) & ((df_def_mf['valor_mercado_num'] == -1.0) | (df_def_mf['valor_mercado_num'] <= valor_mercado_max))].copy()
 
             if not df_def_mf.empty:
                 df_def_mf['Tabla_Cuartil'] = pd.qcut(df_def_mf['Position'], 4, labels=['4 (Zona Alta)', '3 (Media-Alta)', '2 (Media-Baja)', '1 (Zona Baja)'])
@@ -334,114 +278,40 @@ if seccion_activa == "Coeficiente de Eficiencia y Penalización":
                                 - **Impacto Neto (+/-):** {p_net} goles ({p_net90} por cada 90 minutos)
                                 """)
 
-                # Gráfico A
                 st.markdown("### A. Entradas p/90 vs. Limpieza")
                 fig_cruce1 = px.scatter(df_def_mf, x='Entradas_p90', y='Ratio_Limpieza', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Entradas_p90': 'Entradas (p/90)', 'Ratio_Limpieza': 'Ratio Limpieza', 'Tabla_Cuartil': 'Cuartil'})
-                mostrar_ficha_jugador_clic_ampliada(fig_cruce1.update_layout(height=400), df_def_mf, "cruce_1")
-                st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Cruza la cantidad de robos directos (Entradas) con la solvencia para hacerlo sin hacer falta (Limpieza). Destaca a los defensas proactivos pero limpios, penalizando a los que roban mucho a base de excesivas infracciones.</p>", unsafe_allow_html=True)
+                mostrar_ficha_jugador_clic_ampliada(fig_cruce1.update_layout(height=500), df_def_mf, "cruce_1")
 
-                # Gráfico B
                 st.markdown("### B. Intercepciones p/90 vs. Entradas")
                 fig_cruce2 = px.scatter(df_def_mf, x='Intercepciones_p90', y='Entradas_p90', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Intercepciones_p90': 'Intercepciones (p/90)', 'Entradas_p90': 'Entradas (p/90)', 'Tabla_Cuartil': 'Cuartil'})
-                mostrar_ficha_jugador_clic_ampliada(fig_cruce2.update_layout(height=400), df_def_mf, "cruce_2")
-                st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Enfrenta la anticipación táctica (Intercepciones) contra el duelo directo y físico (Entradas). Define el perfil del jugador: si prefiere leer el juego y cortar líneas de pase, o ir directamente al choque contra el rival.</p>", unsafe_allow_html=True)
+                mostrar_ficha_jugador_clic_ampliada(fig_cruce2.update_layout(height=500), df_def_mf, "cruce_2")
 
-                # Gráfico C
                 st.markdown("### C. Impacto (+/- 90) vs. Volumen Defensivo")
                 fig_cruce3 = px.scatter(df_def_mf, x='Entradas_p90', y='Impacto_+/-90', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Entradas_p90': 'Entradas (p/90)', 'Impacto_+/-90': 'Impacto (+/- 90)', 'Tabla_Cuartil': 'Cuartil'})
-                mostrar_ficha_jugador_clic_ampliada(fig_cruce3.update_layout(height=400), df_def_mf, "cruce_3")
-                st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Cruza el éxito colectivo del equipo con el jugador en campo (+/-) frente a su volumen de robos. Es vital para detectar 'Talentos Ocultos': defensores de equipos modestos o en la zona baja (rojos) que sostienen defensivamente a su plantilla aportando un impacto inusualmente positivo.</p>", unsafe_allow_html=True)
+                mostrar_ficha_jugador_clic_ampliada(fig_cruce3.update_layout(height=500), df_def_mf, "cruce_3")
 
-                # Gráfico D
                 st.markdown("### D. Solidez (Int) vs. Centros")
                 fig_cruce4 = px.scatter(df_def_mf, x='Intercepciones_p90', y='Centros_p90', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Intercepciones_p90': 'Intercepciones (p/90)', 'Centros_p90': 'Centros (p/90)', 'Tabla_Cuartil': 'Cuartil'})
-                mostrar_ficha_jugador_clic_ampliada(fig_cruce4.update_layout(height=400), df_def_mf, "cruce_4")
-                st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Evalúa la relación entre la solidez de corte (Intercepciones) y la capacidad ofensiva/distribución (Centros). Identifica perfiles muy completos (típicamente carrileros o pivotes creativos) que participan activamente en ambas áreas.</p>", unsafe_allow_html=True)
+                mostrar_ficha_jugador_clic_ampliada(fig_cruce4.update_layout(height=500), df_def_mf, "cruce_4")
 
-                # Gráfico E
                 st.markdown("### E. Entradas vs. Tarjetas")
                 fig_cruce5 = px.scatter(df_def_mf, x='Entradas_p90', y='Tarjetas_Totales', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min', 'CrdY', 'CrdR'], labels={'Entradas_p90': 'Entradas (p/90)', 'Tarjetas_Totales': 'Total Tarjetas', 'Tabla_Cuartil': 'Cuartil'})
-                mostrar_ficha_jugador_clic_ampliada(fig_cruce5.update_layout(height=400), df_def_mf, "cruce_5")
-                st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Mide el factor de riesgo disciplinario. Expone a aquellos jugadores que, si bien ganan muchas entradas, cruzan constantemente la línea de la legalidad costándole amonestaciones recurrentes a su equipo.</p>", unsafe_allow_html=True)
+                mostrar_ficha_jugador_clic_ampliada(fig_cruce5.update_layout(height=500), df_def_mf, "cruce_5")
 
                 # ==============================================================
                 # 2. MÉTRICAS INDIVIDUALES (TABLAS Y BARRAS A COLOR) ABAJO
                 # ==============================================================
-                
-                # 1. Gráfica de Impacto (+/- 90)
                 st.markdown("---")
                 st.subheader(f"1. Tablas y Medias: Impacto (+/- 90) en **{liga_fbref_nombre}**")
                 tabla_imp = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Impacto_+/-90', 'valor_mercado_num', 'edad_final']].sort_values(by='Impacto_+/-90', ascending=False)
                 tabla_imp['valor_mercado_num'] = tabla_imp['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
                 tabla_imp.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Impacto (+/- 90)', 'V. Mercado', 'Edad']
                 st.dataframe(tabla_imp, use_container_width=True, hide_index=True)
-                fig_imp = px.bar(preparar_datos_metrica(df_def_mf, 'Impacto_+/-90', 'Impacto_+/-90'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Impacto)", labels={'Media_Valor': 'Media Impacto (+/- 90)', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
-                fig_imp.update_traces(texttemplate='%{text}', textposition='inside')
-                fig_imp.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
-                st.plotly_chart(fig_imp, use_container_width=True)
-
-                # 2. Gráfica de Limpieza Defensiva
-                st.markdown("---")
-                st.subheader(f"2. Tablas y Medias: Limpieza Defensiva (Entradas/Faltas)")
-                tabla_lim = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Ratio_Limpieza', 'valor_mercado_num', 'edad_final']].sort_values(by='Ratio_Limpieza', ascending=False)
-                tabla_lim['valor_mercado_num'] = tabla_lim['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
-                tabla_lim.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Limpieza (Entradas/Faltas)', 'V. Mercado', 'Edad']
-                st.dataframe(tabla_lim, use_container_width=True, hide_index=True)
-                fig_lim = px.bar(preparar_datos_metrica(df_def_mf, 'Ratio_Limpieza', 'Ratio_Limpieza'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Limpieza Defensiva)", labels={'Media_Valor': 'Media Ratio Limpieza', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
-                fig_lim.update_traces(texttemplate='%{text}', textposition='inside')
-                fig_lim.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
-                st.plotly_chart(fig_lim, use_container_width=True)
-
-                # 3. Gráfica de Entradas p/90
-                st.markdown("---")
-                st.subheader(f"3. Tablas y Medias: Volumen de Entradas (p/90)")
-                tabla_tkl = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Entradas_p90', 'TklW', 'valor_mercado_num', 'edad_final']].sort_values(by='Entradas_p90', ascending=False)
-                tabla_tkl['valor_mercado_num'] = tabla_tkl['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
-                tabla_tkl.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Entradas (p/90)', 'Entradas Totales', 'V. Mercado', 'Edad']
-                st.dataframe(tabla_tkl, use_container_width=True, hide_index=True)
-                fig_tkl = px.bar(preparar_datos_metrica(df_def_mf, 'Entradas_p90', 'Entradas_p90'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Entradas p/90)", labels={'Media_Valor': 'Media Entradas p/90', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
-                fig_tkl.update_traces(texttemplate='%{text}', textposition='inside')
-                fig_tkl.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
-                st.plotly_chart(fig_tkl, use_container_width=True)
-
-                # 4. Gráfica de Intercepciones p/90
-                st.markdown("---")
-                st.subheader(f"4. Tablas y Medias: Volumen de Intercepciones (p/90)")
-                tabla_int = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Intercepciones_p90', 'Int', 'valor_mercado_num', 'edad_final']].sort_values(by='Intercepciones_p90', ascending=False)
-                tabla_int['valor_mercado_num'] = tabla_int['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
-                tabla_int.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Intercepciones (p/90)', 'Intercep. Totales', 'V. Mercado', 'Edad']
-                st.dataframe(tabla_int, use_container_width=True, hide_index=True)
-                fig_int_bar = px.bar(preparar_datos_metrica(df_def_mf, 'Intercepciones_p90', 'Intercepciones_p90'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Intercepciones p/90)", labels={'Media_Valor': 'Media Intercepciones p/90', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
-                fig_int_bar.update_traces(texttemplate='%{text}', textposition='inside')
-                fig_int_bar.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
-                st.plotly_chart(fig_int_bar, use_container_width=True)
-
-                # 5. Gráfica de Centros / Distribución
-                st.markdown("---")
-                st.subheader(f"5. Tablas y Medias: Distribución y Centros (Crs p/90)")
-                tabla_crs = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Centros_p90', 'valor_mercado_num', 'edad_final']].sort_values(by='Centros_p90', ascending=False)
-                tabla_crs['valor_mercado_num'] = tabla_crs['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
-                tabla_crs.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Centros (p/90)', 'V. Mercado', 'Edad']
-                st.dataframe(tabla_crs, use_container_width=True, hide_index=True)
-                fig_crs = px.bar(preparar_datos_metrica(df_def_mf, 'Centros_p90', 'Centros_p90'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Centros p/90)", labels={'Media_Valor': 'Media Centros p/90', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
-                fig_crs.update_traces(texttemplate='%{text}', textposition='inside')
-                fig_crs.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
-                st.plotly_chart(fig_crs, use_container_width=True)
-
-                # 6. Gráfica de Disciplina y Riesgo
-                st.markdown("---")
-                st.subheader(f"6. Tablas y Medias: Disciplina (Tarjetas Totales)")
-                tabla_disc = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Entradas_p90', 'CrdY', 'CrdR', 'Tarjetas_Totales', 'valor_mercado_num', 'edad_final']].sort_values(by='Tarjetas_Totales', ascending=False)
-                tabla_disc['valor_mercado_num'] = tabla_disc['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
-                tabla_disc.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Entradas (p/90)', 'Amarillas', 'Rojas', 'Total Tarjetas', 'V. Mercado', 'Edad']
-                st.dataframe(tabla_disc, use_container_width=True, hide_index=True)
-                fig_disc_bar = px.bar(preparar_datos_metrica(df_def_mf, 'Tarjetas_Totales', 'Tarjetas_Totales'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Tarjetas Totales)", labels={'Media_Valor': 'Media Tarjetas Totales', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
-                fig_disc_bar.update_traces(texttemplate='%{text}', textposition='inside')
-                fig_disc_bar.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
-                st.plotly_chart(fig_disc_bar, use_container_width=True)
+                fig_imp = px.bar(preparar_datos_metrica(df_def_mf, 'Impacto_+/-90', 'Impacto_+/-90'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Impacto)")
+                st.plotly_chart(fig_imp.update_layout(height=500, xaxis_tickangle=0), use_container_width=True)
 
             else:
-                st.warning(f"No se encontraron jugadores con los filtros seleccionados (Min. 1000 min, máx. {edad_maxima_def} años y máx. {valor_mercado_max}M€). Prueba a ampliar el rango en la barra lateral.")
+                st.warning(f"No se encontraron jugadores con los filtros seleccionados.")
         else:
             st.warning("No se encontraron las columnas de clasificación (W, D, L) en los archivos CSV.")
 
@@ -561,7 +431,7 @@ elif seccion_activa == "Análisis de Sobreprecio":
 
                 fig_cuartiles = px.bar(resumen_cuartiles, x='Demarcación', y='Precio Medio (M€)', color='Cuartil de Precio', barmode='group', text='Precio Medio (M€)', title=f"Precio Medio por Cuartil en {liga_seleccionada} (Sub-{edad_maxima})")
                 fig_cuartiles.update_traces(texttemplate='%{text} M€', textposition='outside')
-                fig_cuartiles.update_layout(height=500, margin=dict(t=50))
+                fig_cuartiles.update_layout(height=600, margin=dict(t=50))
                 st.plotly_chart(fig_cuartiles, use_container_width=True)
             else:
                 st.warning(f"No hay jugadores en **{liga_seleccionada}** que cumplan con los filtros.")
@@ -818,3 +688,188 @@ elif seccion_activa == "Scouting y Producción Ofensiva":
                 legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1)
             )
             st.plotly_chart(fig, use_container_width=True)
+
+# ==============================================================================
+# SECCIÓN 4: 🤖 AI SCOUT PRO (NUEVO MEJORADO)
+# ==============================================================================
+elif seccion_activa == "🤖 AI Scout Pro: Comparativas y Clones":
+    st.subheader("🤖 AI Scout Pro: Análisis de Similitud Táctica y Perfiles Espejo")
+    st.markdown("""
+    Este modelo de Machine Learning avanzado utiliza **Similitud del Coseno** sobre métricas **ajustadas por 90 minutos** 
+    para aislar el estilo de juego real. Encuentra los clones estadísticos exactos de cualquier jugador en la base de datos, 
+    sin importar si su equipo tiene mucha o poca posesión.
+    """)
+
+    df_full, _, _ = cargar_datos_completos()
+
+    if not df_full.empty:
+        # 1. FILTROS DE FIABILIDAD PARA EL MODELO
+        min_minutos = st.sidebar.number_input("Minutos Mínimos Jugados (Para evitar falsos positivos)", value=800, step=100)
+        df_ml = df_full[df_full['Min'] >= min_minutos].copy()
+        
+        # Evitar divisiones por 0
+        df_ml['90s'] = df_ml['90s'].replace(0, 0.1)
+
+        jugadores_disponibles = sorted(df_ml['Player'].dropna().unique())
+        
+        col_search1, col_search2 = st.columns([2, 1])
+        with col_search1:
+            jugador_objetivo = st.selectbox("🔍 Selecciona el jugador a analizar (Objetivo):", jugadores_disponibles)
+        with col_search2:
+            filtro_posicion = st.radio("Filtro de Búsqueda:", ["Buscar en Todas las Posiciones", "Solo en su Misma Demarcación"])
+
+        if st.button("🚀 Ejecutar Algoritmo de Similitud", type="primary"):
+            with st.spinner("Procesando vectores multidimensionales en la base de datos..."):
+                
+                # 2. SELECCIÓN DE MÉTRICAS CLAVE Y TRANSFORMACIÓN POR 90 MINUTOS
+                metricas_base = ['Gls', 'Ast', 'G+A', 'TklW', 'Int', 'Crs', 'Fls', 'Fld', 'CrdY', 'CrdR']
+                metricas_reales = [m for m in metricas_base if m in df_ml.columns]
+                
+                # Convertimos las métricas de volumen bruto a estadísticas por 90 minutos
+                for m in metricas_reales:
+                    df_ml[f"{m}_p90"] = (df_ml[m] / df_ml['90s']).astype(float)
+                
+                # Rescatamos también métricas que ya venían promediadas (porcentajes, impactos...)
+                columnas_numericas = df_ml.select_dtypes(include=[np.number]).columns.tolist()
+                cols_extra = [c for c in columnas_numericas if '90' in c or '%' in c or '+/-' in c]
+                
+                features_finales = list(set([f"{m}_p90" for m in metricas_reales] + cols_extra))
+                
+                # Limpieza de nulos o infinitos matemáticos
+                df_ml[features_finales] = df_ml[features_finales].replace([np.inf, -np.inf], np.nan).fillna(0)
+
+                # 3. FILTRADO CONDICIONAL DE POSICIÓN
+                if filtro_posicion == "Solo en su Misma Demarcación":
+                    pos_objetivo = df_ml[df_ml['Player'] == jugador_objetivo]['Pos'].iloc[0]
+                    df_busqueda = df_ml[df_ml['Pos'] == pos_objetivo].copy()
+                else:
+                    df_busqueda = df_ml.copy()
+
+                # 4. NORMALIZACIÓN (Z-SCORE) Y SIMILITUD DEL COSENO
+                # Agrupamos por jugador promediando por si tuvo traspasos a mitad de año
+                df_features = df_busqueda.groupby('Player')[features_finales].mean().reset_index()
+                
+                # Nos quedamos solo con las columnas que tengan desviación estándar mayor a 0
+                features_validos = df_features[features_finales].std()[df_features[features_finales].std() > 0].index.tolist()
+                df_norm = (df_features[features_validos] - df_features[features_validos].mean()) / df_features[features_validos].std()
+                
+                try:
+                    idx_target = df_features[df_features['Player'] == jugador_objetivo].index[0]
+                    vector_objetivo = df_norm.iloc[idx_target].values
+                    matriz_valores = df_norm.values
+                    
+                    norma_obj = np.linalg.norm(vector_objetivo)
+                    normas_mat = np.linalg.norm(matriz_valores, axis=1)
+                    
+                    norma_obj = norma_obj if norma_obj > 0 else 1e-10
+                    normas_mat = np.where(normas_mat == 0, 1e-10, normas_mat)
+                    
+                    similitud = np.dot(matriz_valores, vector_objetivo) / (normas_mat * norma_obj)
+                    
+                    # Convertimos rango -1 a 1 en porcentaje 0-100%
+                    df_features['Afinidad (%)'] = ((similitud + 1) / 2 * 100).round(2)
+                    
+                    # 5. RESULTADOS TOP SIMILARES
+                    similares = df_features.sort_values(by='Afinidad (%)', ascending=False)
+                    similares = similares[similares['Player'] != jugador_objetivo].head(10)
+                    
+                    info_extra = df_busqueda[['Player', 'Nation', 'Pos', 'Squad', 'Comp', 'Age']].drop_duplicates(subset=['Player'])
+                    resultado_final = pd.merge(similares[['Player', 'Afinidad (%)']], info_extra, on='Player', how='left')
+
+                    st.success(f" Análisis completado. Top 10 perfiles más idénticos a **{jugador_objetivo}**:")
+                    
+                    tabla_mostrar = resultado_final.rename(
+                        columns={'Player': 'Jugador', 'Pos': 'Demarcación', 'Squad': 'Equipo', 'Comp': 'Competición', 'Age': 'Edad'}
+                    )
+                    
+                    # Coloreamos visualmente la tabla
+                    st.dataframe(
+                        tabla_mostrar.style.background_gradient(subset=['Afinidad (%)'], cmap='Greens'),
+                        use_container_width=True, hide_index=True
+                    )
+
+                    # =========================================================================================
+                    # 6. GRÁFICOS AVANZADOS AMPLIADOS
+                    # =========================================================================================
+                    if not tabla_mostrar.empty:
+                        top_1 = tabla_mostrar.iloc[0]['Jugador']
+                        top_2 = tabla_mostrar.iloc[1]['Jugador'] if len(tabla_mostrar) > 1 else None
+                        
+                        jugadores_comp = [jugador_objetivo, top_1]
+                        if top_2:
+                            jugadores_comp.append(top_2)
+                        
+                        st.markdown("---")
+                        st.markdown(f"### 🕸️ Radar de Estilo Percentil: {jugador_objetivo} vs Mejores Clones")
+                        st.markdown("Los valores representan en qué **percentil (0-100)** se encuentra el jugador respecto a la base de datos. Un percentil de 90 significa que es mejor que el 90% de los jugadores en esa métrica, permitiendo comparar atributos totalmente diferentes de forma equilibrada.")
+                        
+                        # Atributos para graficar
+                        cols_radar = [f"{m}_p90" for m in ['Gls', 'Ast', 'TklW', 'Int', 'Crs', 'Fls']]
+                        cols_radar_nombres = ['Goles (p90)', 'Asistencias (p90)', 'Entradas (p90)', 'Intercepciones (p90)', 'Centros (p90)', 'Faltas Cometidas (p90)']
+                        
+                        df_radar = pd.DataFrame()
+                        df_radar['Jugador'] = jugadores_comp
+                        
+                        # Transformamos los valores reales en percentiles para que el radar sea perfecto
+                        for idx, col in enumerate(cols_radar):
+                            if col in df_ml.columns:
+                                pct_serie = df_ml[col].rank(pct=True) * 100
+                                valores_pct = []
+                                for j in jugadores_comp:
+                                    val = pct_serie[df_ml['Player'] == j].mean()
+                                    valores_pct.append(val)
+                                df_radar[cols_radar_nombres[idx]] = valores_pct
+                        
+                        fig_radar = go.Figure()
+                        colores_radar = ['#e74c3c', '#3498db', '#f1c40f'] # Objetivo (Rojo), Clon 1 (Azul), Clon 2 (Amarillo)
+                        
+                        for i, j_name in enumerate(jugadores_comp):
+                            valores = df_radar.iloc[i].drop('Jugador').values.tolist()
+                            fig_radar.add_trace(go.Scatterpolar(
+                                r=valores + [valores[0]],
+                                theta=cols_radar_nombres + [cols_radar_nombres[0]],
+                                fill='toself',
+                                name=j_name,
+                                line=dict(color=colores_radar[i]),
+                                opacity=0.7
+                            ))
+                            
+                        # Configuración de gráfico más grande y con escala de 0 a 100 estática
+                        fig_radar.update_layout(
+                            polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+                            showlegend=True,
+                            height=750, # Tamaño ampliado
+                            margin=dict(t=50, b=50, l=50, r=50),
+                            legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5)
+                        )
+                        st.plotly_chart(fig_radar, use_container_width=True)
+
+                        st.markdown("---")
+                        st.markdown("###  Comparativa Directa de Atributos (Valores Absolutos Promediados a 90 min)")
+                        
+                        # Extraer datos reales (No percentiles) para el gráfico de barras cara a cara
+                        df_barras = df_ml[df_ml['Player'].isin(jugadores_comp)][['Player'] + cols_radar].groupby('Player').mean().reset_index()
+                        
+                        diccionario_renombres = {cols_radar[i]: cols_radar_nombres[i] for i in range(len(cols_radar)) if cols_radar[i] in df_barras.columns}
+                        df_barras = df_barras.rename(columns=diccionario_renombres)
+                        
+                        # Convertir columnas a formato apto para Plotly Express
+                        df_melted = df_barras.melt(id_vars='Player', var_name='Métrica', value_name='Valor (por 90 min)')
+                        
+                        fig_bar = px.bar(
+                            df_melted, 
+                            y='Métrica', 
+                            x='Valor (por 90 min)', 
+                            color='Player', 
+                            barmode='group',
+                            orientation='h',
+                            color_discrete_sequence=colores_radar,
+                            height=600 # Gráfico ampliado
+                        )
+                        fig_bar.update_layout(yaxis_title=None, legend_title=None)
+                        st.plotly_chart(fig_bar, use_container_width=True)
+                        
+                except IndexError:
+                    st.error("El jugador seleccionado no se encuentra en el conjunto de datos tras aplicar el filtro de minutos mínimos. Reduce la exigencia de minutos en la barra lateral e inténtalo de nuevo.")
+    else:
+        st.warning(" No se han encontrado los archivos de datos. Asegúrate de que Google Drive completó la descarga al inicio.")
