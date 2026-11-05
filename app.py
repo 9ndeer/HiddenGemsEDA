@@ -23,14 +23,18 @@ def descargar_datos_desde_drive():
     archivos = {
         "players_data-2025_2026.csv": "https://drive.google.com/file/d/1q70oG64yPL4Fo2vYs1MJv_-SeOjOzARj/view?usp=drive_link",
         "players.csv": "https://drive.google.com/file/d/1zjx4UmrXTTcpwS6lgE44YndMKvQK4ILx/view?usp=drive_link",
-        "player_valuations.csv": "https://drive.google.com/file/d/1c0cEnNvtM9Ysnj6td3xKUxlgAf5yxzwQ/view?usp=drive_link"
+        "player_valuations.csv": "https://drive.google.com/file/d/1c0cEnNvtM9Ysnj6td3xKUxlgAf5yxzwQ/view?usp=drive_link",
+        "players_data_light_2025-2026.csv" : "https://drive.google.com/file/d/1n6xdOCR0B8jXKHAbUTcAFBOvwMkbcHBw/view?usp=drive_link",
+        "clubs.csv" : "https://drive.google.com/file/d/1XIit283bxSHeBCQxISAe62XjyELDR65O/view?usp=drive_link",
+        "games.csv": "https://drive.google.com/file/d/1WzBVOcUlCML9ZsOJMOraG-IjXkT0IUBB/view?usp=drive_link",
+        "appearances.csv": "https://drive.google.com/file/d/1DMT4bO4lbqmLHGl_4wrn7AkxJQMh20Fg/view?usp=drive_link"
     }
     
     for nombre_archivo, url_drive in archivos.items():
         ruta_local = os.path.join(data_dir, nombre_archivo)
         if not os.path.exists(ruta_local) and "1zjx4UmrXTTcpwS6lgE44YndMKvQK4ILx" not in url_drive:
             try:
-                gdown.download(url_drive, ruta_local, fuzzy=True, quiet=True)
+                gdown.download(url_drive, ruta_local, quiet=True)
             except Exception as e:
                 st.warning(f"No se pudo descargar automáticamente {nombre_archivo}: {e}")
 
