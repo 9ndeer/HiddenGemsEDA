@@ -14,6 +14,9 @@ st.title("Hidden Gems: Scouting Interactivo y Análisis de Mercado")
 # ==============================================================================
 # DESCARGA AUTOMÁTICA DESDE GOOGLE DRIVE (Para Streamlit Cloud)
 # ==============================================================================
+# ==============================================================================
+# DESCARGA AUTOMÁTICA DESDE GOOGLE DRIVE (Para Streamlit Cloud)
+# ==============================================================================
 @st.cache_resource
 def descargar_datos_desde_drive():
     data_dir = "dataset_transfermarkt"
@@ -32,7 +35,8 @@ def descargar_datos_desde_drive():
     
     for nombre_archivo, url_drive in archivos.items():
         ruta_local = os.path.join(data_dir, nombre_archivo)
-        if not os.path.exists(ruta_local) and "1zjx4UmrXTTcpwS6lgE44YndMKvQK4ILx" not in url_drive:
+        # Comprobamos únicamente si el archivo local NO existe todavía
+        if not os.path.exists(ruta_local):
             try:
                 gdown.download(url_drive, ruta_local, quiet=True)
             except Exception as e:
