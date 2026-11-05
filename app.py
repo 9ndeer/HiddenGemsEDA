@@ -244,7 +244,7 @@ if seccion_activa == "Coeficiente de Eficiencia y Penalización":
                     return df_final
 
                 # ==============================================================
-                # 1. GRÁFICAS DE INTERRELACIÓN (PUNTOS Y FICHAS) ARRIBA
+                # 1. GRÁFICAS DE INTERRELACIÓN EN UNA SOLA COLUMNA (VERTICAL)
                 # ==============================================================
                 st.markdown("---")
                 st.subheader("Interrelación Gráfica Interactiva: Defensa, Disciplina y Distribución")
@@ -299,36 +299,35 @@ if seccion_activa == "Coeficiente de Eficiencia y Penalización":
                                 - **Impacto Neto (+/-):** {p_net} goles ({p_net90} por cada 90 minutos)
                                 """)
 
-                col_a, col_b = st.columns(2)
-                with col_a:
-                    st.markdown("### A. Entradas p/90 vs. Limpieza")
-                    fig_cruce1 = px.scatter(df_def_mf, x='Entradas_p90', y='Ratio_Limpieza', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Entradas_p90': 'Entradas (p/90)', 'Ratio_Limpieza': 'Ratio Limpieza', 'Tabla_Cuartil': 'Cuartil'})
-                    mostrar_ficha_jugador_clic_ampliada(fig_cruce1.update_layout(height=400), df_def_mf, "cruce_1")
-                    st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Cruza la cantidad de robos directos (Entradas) con la solvencia para hacerlo sin hacer falta (Limpieza). Destaca a los defensas proactivos pero limpios, penalizando a los que roban mucho a base de excesivas infracciones.</p>", unsafe_allow_html=True)
+                # Gráfico A
+                st.markdown("### A. Entradas p/90 vs. Limpieza")
+                fig_cruce1 = px.scatter(df_def_mf, x='Entradas_p90', y='Ratio_Limpieza', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Entradas_p90': 'Entradas (p/90)', 'Ratio_Limpieza': 'Ratio Limpieza', 'Tabla_Cuartil': 'Cuartil'})
+                mostrar_ficha_jugador_clic_ampliada(fig_cruce1.update_layout(height=400), df_def_mf, "cruce_1")
+                st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Cruza la cantidad de robos directos (Entradas) con la solvencia para hacerlo sin hacer falta (Limpieza). Destaca a los defensas proactivos pero limpios, penalizando a los que roban mucho a base de excesivas infracciones.</p>", unsafe_allow_html=True)
 
-                with col_b:
-                    st.markdown("### B. Intercepciones p/90 vs. Entradas")
-                    fig_cruce2 = px.scatter(df_def_mf, x='Intercepciones_p90', y='Entradas_p90', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Intercepciones_p90': 'Intercepciones (p/90)', 'Entradas_p90': 'Entradas (p/90)', 'Tabla_Cuartil': 'Cuartil'})
-                    mostrar_ficha_jugador_clic_ampliada(fig_cruce2.update_layout(height=400), df_def_mf, "cruce_2")
-                    st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Enfrenta la anticipación táctica (Intercepciones) contra el duelo directo y físico (Entradas). Define el perfil del jugador: si prefiere leer el juego y cortar líneas de pase, o ir directamente al choque contra el rival.</p>", unsafe_allow_html=True)
+                # Gráfico B
+                st.markdown("### B. Intercepciones p/90 vs. Entradas")
+                fig_cruce2 = px.scatter(df_def_mf, x='Intercepciones_p90', y='Entradas_p90', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Intercepciones_p90': 'Intercepciones (p/90)', 'Entradas_p90': 'Entradas (p/90)', 'Tabla_Cuartil': 'Cuartil'})
+                mostrar_ficha_jugador_clic_ampliada(fig_cruce2.update_layout(height=400), df_def_mf, "cruce_2")
+                st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Enfrenta la anticipación táctica (Intercepciones) contra el duelo directo y físico (Entradas). Define el perfil del jugador: si prefiere leer el juego y cortar líneas de pase, o ir directamente al choque contra el rival.</p>", unsafe_allow_html=True)
 
+                # Gráfico C
                 st.markdown("### C. Impacto (+/- 90) vs. Volumen Defensivo")
                 fig_cruce3 = px.scatter(df_def_mf, x='Entradas_p90', y='Impacto_+/-90', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Entradas_p90': 'Entradas (p/90)', 'Impacto_+/-90': 'Impacto (+/- 90)', 'Tabla_Cuartil': 'Cuartil'})
                 mostrar_ficha_jugador_clic_ampliada(fig_cruce3.update_layout(height=400), df_def_mf, "cruce_3")
                 st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Cruza el éxito colectivo del equipo con el jugador en campo (+/-) frente a su volumen de robos. Es vital para detectar 'Talentos Ocultos': defensores de equipos modestos o en la zona baja (rojos) que sostienen defensivamente a su plantilla aportando un impacto inusualmente positivo.</p>", unsafe_allow_html=True)
 
-                col_c, col_d = st.columns(2)
-                with col_c:
-                    st.markdown("### D. Solidez (Int) vs. Centros")
-                    fig_cruce4 = px.scatter(df_def_mf, x='Intercepciones_p90', y='Centros_p90', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Intercepciones_p90': 'Intercepciones (p/90)', 'Centros_p90': 'Centros (p/90)', 'Tabla_Cuartil': 'Cuartil'})
-                    mostrar_ficha_jugador_clic_ampliada(fig_cruce4.update_layout(height=400), df_def_mf, "cruce_4")
-                    st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Evalúa la relación entre la solidez de corte (Intercepciones) y la capacidad ofensiva/distribución (Centros). Identifica perfiles muy completos (típicamente carrileros o pivotes creativos) que participan activamente en ambas áreas.</p>", unsafe_allow_html=True)
+                # Gráfico D
+                st.markdown("### D. Solidez (Int) vs. Centros")
+                fig_cruce4 = px.scatter(df_def_mf, x='Intercepciones_p90', y='Centros_p90', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min'], labels={'Intercepciones_p90': 'Intercepciones (p/90)', 'Centros_p90': 'Centros (p/90)', 'Tabla_Cuartil': 'Cuartil'})
+                mostrar_ficha_jugador_clic_ampliada(fig_cruce4.update_layout(height=400), df_def_mf, "cruce_4")
+                st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Evalúa la relación entre la solidez de corte (Intercepciones) y la capacidad ofensiva/distribución (Centros). Identifica perfiles muy completos (típicamente carrileros o pivotes creativos) que participan activamente en ambas áreas.</p>", unsafe_allow_html=True)
 
-                with col_d:
-                    st.markdown("### E. Entradas vs. Tarjetas")
-                    fig_cruce5 = px.scatter(df_def_mf, x='Entradas_p90', y='Tarjetas_Totales', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min', 'CrdY', 'CrdR'], labels={'Entradas_p90': 'Entradas (p/90)', 'Tarjetas_Totales': 'Total Tarjetas', 'Tabla_Cuartil': 'Cuartil'})
-                    mostrar_ficha_jugador_clic_ampliada(fig_cruce5.update_layout(height=400), df_def_mf, "cruce_5")
-                    st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Mide el factor de riesgo disciplinario. Expone a aquellos jugadores que, si bien ganan muchas entradas, cruzan constantemente la línea de la legalidad costándole amonestaciones recurrentes a su equipo.</p>", unsafe_allow_html=True)
+                # Gráfico E
+                st.markdown("### E. Entradas vs. Tarjetas")
+                fig_cruce5 = px.scatter(df_def_mf, x='Entradas_p90', y='Tarjetas_Totales', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, hover_name='Player', hover_data=['Squad', 'Min', 'CrdY', 'CrdR'], labels={'Entradas_p90': 'Entradas (p/90)', 'Tarjetas_Totales': 'Total Tarjetas', 'Tabla_Cuartil': 'Cuartil'})
+                mostrar_ficha_jugador_clic_ampliada(fig_cruce5.update_layout(height=400), df_def_mf, "cruce_5")
+                st.markdown("<p style='font-size:0.9em; color:gray'>ℹ️ <b>¿Qué compara y por qué?:</b> Mide el factor de riesgo disciplinario. Expone a aquellos jugadores que, si bien ganan muchas entradas, cruzan constantemente la línea de la legalidad costándole amonestaciones recurrentes a su equipo.</p>", unsafe_allow_html=True)
 
                 # ==============================================================
                 # 2. MÉTRICAS INDIVIDUALES (TABLAS Y BARRAS A COLOR) ABAJO
