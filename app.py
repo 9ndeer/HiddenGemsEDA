@@ -301,17 +301,81 @@ if seccion_activa == "Coeficiente de Eficiencia y Penalización":
                 # ==============================================================
                 # 2. MÉTRICAS INDIVIDUALES (TABLAS Y BARRAS A COLOR) ABAJO
                 # ==============================================================
+
+                # 1. Gráfica de Impacto (+/- 90)
                 st.markdown("---")
                 st.subheader(f"1. Tablas y Medias: Impacto (+/- 90) en **{liga_fbref_nombre}**")
                 tabla_imp = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Impacto_+/-90', 'valor_mercado_num', 'edad_final']].sort_values(by='Impacto_+/-90', ascending=False)
                 tabla_imp['valor_mercado_num'] = tabla_imp['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
                 tabla_imp.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Impacto (+/- 90)', 'V. Mercado', 'Edad']
                 st.dataframe(tabla_imp, use_container_width=True, hide_index=True)
-                fig_imp = px.bar(preparar_datos_metrica(df_def_mf, 'Impacto_+/-90', 'Impacto_+/-90'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Impacto)")
-                st.plotly_chart(fig_imp.update_layout(height=500, xaxis_tickangle=0), use_container_width=True)
+                fig_imp = px.bar(preparar_datos_metrica(df_def_mf, 'Impacto_+/-90', 'Impacto_+/-90'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Impacto)", labels={'Media_Valor': 'Media Impacto (+/- 90)', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
+                fig_imp.update_traces(texttemplate='%{text}', textposition='inside')
+                fig_imp.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
+                st.plotly_chart(fig_imp, use_container_width=True)
+
+                # 2. Gráfica de Limpieza Defensiva
+                st.markdown("---")
+                st.subheader(f"2. Tablas y Medias: Limpieza Defensiva (Entradas/Faltas)")
+                tabla_lim = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Ratio_Limpieza', 'valor_mercado_num', 'edad_final']].sort_values(by='Ratio_Limpieza', ascending=False)
+                tabla_lim['valor_mercado_num'] = tabla_lim['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
+                tabla_lim.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Limpieza (Entradas/Faltas)', 'V. Mercado', 'Edad']
+                st.dataframe(tabla_lim, use_container_width=True, hide_index=True)
+                fig_lim = px.bar(preparar_datos_metrica(df_def_mf, 'Ratio_Limpieza', 'Ratio_Limpieza'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Limpieza Defensiva)", labels={'Media_Valor': 'Media Ratio Limpieza', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
+                fig_lim.update_traces(texttemplate='%{text}', textposition='inside')
+                fig_lim.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
+                st.plotly_chart(fig_lim, use_container_width=True)
+
+                # 3. Gráfica de Entradas p/90
+                st.markdown("---")
+                st.subheader(f"3. Tablas y Medias: Volumen de Entradas (p/90)")
+                tabla_tkl = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Entradas_p90', 'TklW', 'valor_mercado_num', 'edad_final']].sort_values(by='Entradas_p90', ascending=False)
+                tabla_tkl['valor_mercado_num'] = tabla_tkl['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
+                tabla_tkl.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Entradas (p/90)', 'Entradas Totales', 'V. Mercado', 'Edad']
+                st.dataframe(tabla_tkl, use_container_width=True, hide_index=True)
+                fig_tkl = px.bar(preparar_datos_metrica(df_def_mf, 'Entradas_p90', 'Entradas_p90'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Entradas p/90)", labels={'Media_Valor': 'Media Entradas p/90', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
+                fig_tkl.update_traces(texttemplate='%{text}', textposition='inside')
+                fig_tkl.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
+                st.plotly_chart(fig_tkl, use_container_width=True)
+
+                # 4. Gráfica de Intercepciones p/90
+                st.markdown("---")
+                st.subheader(f"4. Tablas y Medias: Volumen de Intercepciones (p/90)")
+                tabla_int = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Intercepciones_p90', 'Int', 'valor_mercado_num', 'edad_final']].sort_values(by='Intercepciones_p90', ascending=False)
+                tabla_int['valor_mercado_num'] = tabla_int['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
+                tabla_int.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Intercepciones (p/90)', 'Intercep. Totales', 'V. Mercado', 'Edad']
+                st.dataframe(tabla_int, use_container_width=True, hide_index=True)
+                fig_int_bar = px.bar(preparar_datos_metrica(df_def_mf, 'Intercepciones_p90', 'Intercepciones_p90'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Intercepciones p/90)", labels={'Media_Valor': 'Media Intercepciones p/90', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
+                fig_int_bar.update_traces(texttemplate='%{text}', textposition='inside')
+                fig_int_bar.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
+                st.plotly_chart(fig_int_bar, use_container_width=True)
+
+                # 5. Gráfica de Centros / Distribución
+                st.markdown("---")
+                st.subheader(f"5. Tablas y Medias: Distribución y Centros (Crs p/90)")
+                tabla_crs = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Centros_p90', 'valor_mercado_num', 'edad_final']].sort_values(by='Centros_p90', ascending=False)
+                tabla_crs['valor_mercado_num'] = tabla_crs['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
+                tabla_crs.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Centros (p/90)', 'V. Mercado', 'Edad']
+                st.dataframe(tabla_crs, use_container_width=True, hide_index=True)
+                fig_crs = px.bar(preparar_datos_metrica(df_def_mf, 'Centros_p90', 'Centros_p90'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Centros p/90)", labels={'Media_Valor': 'Media Centros p/90', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
+                fig_crs.update_traces(texttemplate='%{text}', textposition='inside')
+                fig_crs.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
+                st.plotly_chart(fig_crs, use_container_width=True)
+
+                # 6. Gráfica de Disciplina y Riesgo
+                st.markdown("---")
+                st.subheader(f"6. Tablas y Medias: Disciplina (Tarjetas Totales)")
+                tabla_disc = df_def_mf[['Player', 'Squad', 'Tipo_Demarcacion', 'Tabla_Cuartil', 'Entradas_p90', 'CrdY', 'CrdR', 'Tarjetas_Totales', 'valor_mercado_num', 'edad_final']].sort_values(by='Tarjetas_Totales', ascending=False)
+                tabla_disc['valor_mercado_num'] = tabla_disc['valor_mercado_num'].apply(lambda x: f"{x:.1f} M€" if x != -1.0 else "N/D")
+                tabla_disc.columns = ['Nombre', 'Equipo', 'Demarcación', 'Cuartil', 'Entradas (p/90)', 'Amarillas', 'Rojas', 'Total Tarjetas', 'V. Mercado', 'Edad']
+                st.dataframe(tabla_disc, use_container_width=True, hide_index=True)
+                fig_disc_bar = px.bar(preparar_datos_metrica(df_def_mf, 'Tarjetas_Totales', 'Tarjetas_Totales'), x='Eje_X_Label', y='Media_Valor', color='Tabla_Cuartil', color_discrete_map=mapa_colores_cuartil, text='Media_Valor', title="Media Global del Cuartil (Tarjetas Totales)", labels={'Media_Valor': 'Media Tarjetas Totales', 'Eje_X_Label': 'Cuartil y Top 3', 'Tabla_Cuartil': 'Cuartil'})
+                fig_disc_bar.update_traces(texttemplate='%{text}', textposition='inside')
+                fig_disc_bar.update_layout(height=500, xaxis_tickangle=0, margin=dict(t=50, b=100))
+                st.plotly_chart(fig_disc_bar, use_container_width=True)
 
             else:
-                st.warning(f"No se encontraron jugadores con los filtros seleccionados.")
+                st.warning(f"No se encontraron jugadores con los filtros seleccionados (Min. 1000 min, máx. {edad_maxima_def} años y máx. {valor_mercado_max}M€). Prueba a ampliar el rango en la barra lateral.")
         else:
             st.warning("No se encontraron las columnas de clasificación (W, D, L) en los archivos CSV.")
 
