@@ -6,9 +6,36 @@ import plotly.express as px
 import os
 import unicodedata
 import re
+import gdown
 
 st.set_page_config(page_title="Scouting Hidden Gems Pro", layout="wide")
 st.title("Hidden Gems: Scouting Interactivo y Análisis de Mercado")
+
+# ==============================================================================
+# DESCARGA AUTOMÁTICA DESDE GOOGLE DRIVE (Para Streamlit Cloud)
+# ==============================================================================
+@st.cache_resource
+def descargar_datos_desde_drive():
+    data_dir = "dataset_transfermarkt"
+    os.makedirs(data_dir, exist_ok=True)
+    
+    # Enlaces de descarga configurados para tus archivos de Drive
+    archivos = {
+        "players_data-2025_2026.csv": "https://drive.google.com/file/d/1q70oG64yPL4Fo2vYs1MJv_-SeOjOzARj/view?usp=drive_link",
+        "players.csv": "https://drive.google.com/file/d/1zjx4UmrXTTcpwS6lgE44YndMKvQK4ILx/view?usp=drive_link",
+        "player_valuations.csv": "https://drive.google.com/file/d/1c0cEnNvtM9Ysnj6td3xKUxlgAf5yxzwQ/view?usp=drive_link"
+    }
+    
+    for nombre_archivo, url_drive in archivos.items():
+        ruta_local = os.path.join(data_dir, nombre_archivo)
+        if not os.path.exists(ruta_local) and "1zjx4UmrXTTcpwS6lgE44YndMKvQK4ILx" not in url_drive:
+            try:
+                gdown.download(url_drive, ruta_local, fuzzy=True, quiet=True)
+            except Exception as e:
+                st.warning(f"No se pudo descargar automáticamente {nombre_archivo}: {e}")
+
+# Ejecutar descarga al iniciar
+descargar_datos_desde_drive()
 
 # Usamos un selector en la barra lateral para cambiar de hipótesis/pestaña dinámicamente
 st.sidebar.header("Navegación e Hipótesis")
