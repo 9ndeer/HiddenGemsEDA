@@ -578,7 +578,14 @@ elif seccion_activa == "Scouting y Producción Ofensiva":
     st.markdown("Filtra jugadores jóvenes, analiza su producción ofensiva ajustada y compárala con los cuartiles históricos de la liga seleccionada.")
 
     edad_max = st.sidebar.slider("Edad Máxima", 17, 35, 23, step=1, key="edad_max_p1")
-    presupuesto_max = st.sidebar.slider("Presupuesto Máximo (€)", 500000, 50000000, 5000000, step=500000, key="presupuesto_p1")
+    presupuesto_max = st.sidebar.slider(
+        "Presupuesto Máximo (Millones €):", 
+        min_value=0.5, 
+        max_value=200.0, 
+        value=5.0, 
+        step=0.5, 
+        key="presupuesto_p1"
+    )    
     minutos_min = st.sidebar.number_input("Minutos mínimos jugados (Temporada 25/26)", value=2000, step=100, key="minutos_p1")
 
     st.sidebar.markdown("---")
@@ -688,7 +695,7 @@ elif seccion_activa == "Scouting y Producción Ofensiva":
 
         df_jovenes['año_contrato'] = pd.to_datetime(df_jovenes['fin_contrato'], errors='coerce').dt.year
 
-        filtro_presupuesto = df_jovenes['valor_mercado'] <= presupuesto_max
+        filtro_presupuesto = df_jovenes['valor_mercado'] <= (presupuesto_max * 1_000_000)        
         filtro_regularidad = df_jovenes['min_25_26'] >= minutos_min
         filtro_demarcacion = df_jovenes['sub_posicion'] == demarcacion_sel
 
