@@ -26,7 +26,6 @@ El repositorio está organizado de la siguiente manera:
 HiddenGemsEDA/
 │
 ├── dataset_transfermarkt/       # Directorio con los CSVs extraídos y procesados
-├── transfermarkt_archive.zip    # Archivo comprimido original con el dataset
 │
 ├── Hipotesis_1.ipynb            # Notebook EDA: Eficiencia Defensiva y Riesgo
 ├── Hipotesis_2.ipynb            # Notebook EDA: Sobreprecio por Demarcación
