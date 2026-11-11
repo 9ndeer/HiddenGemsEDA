@@ -11,9 +11,7 @@ import gdown
 st.set_page_config(page_title="Scouting Hidden Gems Pro", layout="wide")
 st.title("Hidden Gems: Scouting Interactivo y Análisis de Mercado")
 
-# ==============================================================================
 # DESCARGA AUTOMÁTICA DESDE GOOGLE DRIVE (Para Streamlit Cloud)
-# ==============================================================================
 @st.cache_resource
 def descargar_datos_desde_drive():
     data_dir = "dataset_transfermarkt"
@@ -49,7 +47,7 @@ seccion_activa = st.sidebar.radio(
         "Coeficiente de Eficiencia y Penalización", 
         "Análisis de Sobreprecio",
         "Scouting y Producción Ofensiva",
-        "🤖 AI Scout Pro: Comparativas y Clones"
+        "AI Scout Pro: Comparativas y Clones"
     ]
 )
 
@@ -92,9 +90,7 @@ def cargar_datos_completos():
     return df_full, df_val, df_players_map
 
 
-# ==============================================================================
 # SECCIÓN 1: COEFICIENTE DE EFICIENCIA PONDERADA Y PENALIZACIÓN
-# ==============================================================================
 if seccion_activa == "Coeficiente de Eficiencia y Penalización":
     st.sidebar.header("Filtros Dinámicos")
     st.subheader("Análisis Defensivo, de Eficiencia y Disciplinario de Mediocentros y Defensas")
@@ -379,9 +375,7 @@ if seccion_activa == "Coeficiente de Eficiencia y Penalización":
         else:
             st.warning("No se encontraron las columnas de clasificación (W, D, L) en los archivos CSV.")
 
-# ==============================================================================
 # SECCIÓN 2: ANÁLISIS DE SOBREPRECIO
-# ==============================================================================
 elif seccion_activa == "Análisis de Sobreprecio":
     st.subheader("Análisis de Sobreprecio: Demarcaciones por Liga, Cuartiles de Precio y Edad")
     st.markdown("""
@@ -504,9 +498,7 @@ elif seccion_activa == "Análisis de Sobreprecio":
     else:
         st.warning("No se han podido cargar los archivos desde la carpeta dataset_transfermarkt.")
 
-# ==============================================================================
 # SECCIÓN 3: SCOUTING Y PRODUCCIÓN OFENSIVA
-# ==============================================================================
 elif seccion_activa == "Scouting y Producción Ofensiva":
     st.subheader("Scouting de Talentos y Cuartiles de Mercado")
     st.markdown("Filtra jugadores jóvenes, analiza su producción ofensiva ajustada y compárala con los cuartiles históricos de la liga seleccionada.")
@@ -753,9 +745,7 @@ elif seccion_activa == "Scouting y Producción Ofensiva":
             )
             st.plotly_chart(fig, use_container_width=True)
 
-# ==============================================================================
-# SECCIÓN 4: 🤖 AI SCOUT PRO (NUEVO MEJORADO)
-# ==============================================================================
+# SECCIÓN 4: AI SCOUT PRO
 elif seccion_activa == "🤖 AI Scout Pro: Comparativas y Clones":
     st.subheader("🤖 AI Scout Pro: Análisis de Similitud Táctica y Perfiles Espejo")
     st.markdown("""
