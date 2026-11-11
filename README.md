@@ -28,10 +28,9 @@ HiddenGemsEDA/
 ├── dataset_transfermarkt/       # Directorio con los CSVs extraídos y procesados
 ├── transfermarkt_archive.zip    # Archivo comprimido original con el dataset
 │
-├──Hipotesis
-│    ├── Hipotesis_1.ipynb            # Notebook EDA: Eficiencia Defensiva y Riesgo
-│    ├── Hipotesis_2.ipynb            # Notebook EDA: Sobreprecio por Demarcación
-│    ├── Hipotesis_3.ipynb            # Notebook EDA: Producción Ofensiva y AI Scout Pro
+├── Hipotesis_1.ipynb            # Notebook EDA: Eficiencia Defensiva y Riesgo
+├── Hipotesis_2.ipynb            # Notebook EDA: Sobreprecio por Demarcación
+├── Hipotesis_3.ipynb            # Notebook EDA: Producción Ofensiva y AI Scout Pro
 │
 ├── app.py                       # Aplicación interactiva principal en Streamlit
 ├── requirements.txt             # Dependencias del proyecto
