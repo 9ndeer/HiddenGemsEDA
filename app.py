@@ -250,12 +250,12 @@ if seccion_activa == "Coeficiente de Eficiencia y Penalización":
                                 st.markdown("---")
                                 st.info(f"""
                                 **Ficha Ampliada del Jugador Seleccionado:**
-                                - **Nombre y Nacionalidad:** {j['Player']} ({j.get('Nation', 'N/D')})
-                                - **Equipo y Competición:** {j['Squad']} | {j.get('Comp', 'N/D')}
-                                - **Demarcación y Perfil:** {j.get('Tipo_Demarcacion', j.get('Pos', 'N/D'))}
-                                - **Edad / Valor de Mercado:** {j.get('edad_final', 'N/D')} años | **{str_vm}**
+                                - **Nombre:** {j['Player']} ({j.get('Nation', 'N/D')})
+                                - **Equipo:** {j['Squad']} | {j.get('Comp', 'N/D')}
+                                - **Demarcación:** {j.get('Tipo_Demarcacion', j.get('Pos', 'N/D'))}
+                                - **Edad y Valor de Mercado:** {j.get('edad_final', 'N/D')} años | **{str_vm}**
                                 
-                                **Participación y Regularidad:**
+                                **Participación:**
                                 - **Partidos Jugados (Titularidades):** {p_mp} ({p_starts} titularidades)
                                 - **Minutos Totales:** {p_min} min ({j.get('90s', 0)} partidos completos equivalentes)
                                 
@@ -269,7 +269,7 @@ if seccion_activa == "Coeficiente de Eficiencia y Penalización":
                                 - **Goles (Gls) + Asistencias (Ast):** {p_gls} Goles | {p_ast} Asistencias (Total G+A: {p_ga})
                                 - **Centros (Crs):** {j.get('Crs', 0)} ({j.get('Centros_p90', 0)} p/90)
                                 
-                                **Impacto Colectivo (On-Off / +/-):**
+                                **Impacto Colectivo:**
                                 - **Goles a favor / en contra del equipo con él en campo:** {p_ong} GF / {p_onga} GC
                                 - **Impacto Neto (+/-):** {p_net} goles ({p_net90} por cada 90 minutos)
                                 """)
@@ -746,7 +746,7 @@ elif seccion_activa == "Scouting y Producción Ofensiva":
             st.plotly_chart(fig, use_container_width=True)
 
 # SECCIÓN 4: AI SCOUT PRO
-elif seccion_activa == "🤖 AI Scout Pro: Comparativas y Clones":
+elif seccion_activa == "AI Scout Pro: Comparativas y Clones":
     st.subheader("🤖 AI Scout Pro: Análisis de Similitud Táctica y Perfiles Espejo")
     st.markdown("""
     Este modelo de Machine Learning avanzado utiliza **Similitud del Coseno** sobre métricas **ajustadas por 90 minutos** 
